@@ -1,40 +1,117 @@
-[![General Assembly Logo](https://camo.githubusercontent.com/1a91b05b8f4d44b5bbfb83abac2b0996d8e26c92/687474703a2f2f692e696d6775722e636f6d2f6b6538555354712e706e67)](https://generalassemb.ly/education/web-development-immersive)
+# move-calendar
 
-# ruby-template
+## Purpose
+The purpose of this calendar script is to take an exisiting Google calendar or
+iCalendar and create a new calendar from it.
 
-## Updating Dependencies
+## Problem
+There was an exisiting Google calendar that had over 200 events associated with
+it. In order to duplicate the old .ics calendar, you had to copy each individual
+ event to a new date. A second problem was the trivial, and time consuming,
+ process of manually moving each copied calendar event to it's new date.
 
-At the beginning of each cohort:
+## Solution
+Created a Ruby script which takes an exisiting .ics file and copies it to a new
+.ics calendar file. You can either copy the entire calendar to have it's events
+appear on the same day or add *n* number of days to the calendar. This will move
+the new events dates up by *n* days while keeping all information
+(time, summary, description, etc.) the same as the old .ics file.
 
--   Update ruby verison in [`.ruby-version`](.ruby-version)
--   Update [`Gemfile`](Gemfile):
-    -   Update ruby version.
-    -   Find updated versions of gems referenced from Gemfile.
-    -   Update semantic versions in Gemfile as appropriate.
--   `bundle update`
--   `bin/rake # runs both nag and test`
+## Usage
+Once you have the script.rb file cloned, choose which input calendar file you'd
+like to copy and create a file for the new .ics calendar file.
 
-Fix errors and conflicts as necessary.
+To run the script, execute this command in terminal:
 
-## Structure
+```ruby
+ruby lib/script.rb <input_file> <output_file> <interval_weeks>
+```
 
-Dependencies are stored in [`Gemfile`](Gemfile).
+This script takes the old .ics calendar file, new .ics calendar file and the
+number of weeks you'd like the event dates to be adjusted.
 
-Do not configure `bin/rake` tasks directly in [`Rakefile`](Rakefile). Instead,
-store tasks in the [`lib/tasks`](lib/tasks) directory.  Task aliases should go
-in [`lib/tasks/aliases.rake`](lib/tasks/aliases.rake).
+Below you'll find the *parse_event* method which loops through the file and
+parses each event:
 
-Developers should store ruby files in [`lib`](lib), or perhaps a subdirectory.
-If a command line script is needed, it should go in [`bin`](bin).
+```ruby
 
-## Tasks
+def parse_event(line, delimiter)
+  d = line.split(/[\:\=](\d{8})/)
+  d[1] = Date.parse(d[1])
+  return line if d[1].year < 2016
+  d[1] = (d[1] + INTERVAL_DAYS).to_s.gsub('-', '')
+  if d[2]
+    d = d[0] + "#{delimiter}" + d[1] + d[2]
+  else
+    d = d[0] + "#{delimiter}" + d[1]
+  end
+end
 
-Developers should run these often!
+```
+The INTERVAL_DAYS variable, takes the <interval_weeks> argument value and
+multiplies it by 7 (days in a week) to get the total days to increase the new
+calendar events by.
 
--   `bin/rake nag`  (or `bundle exec rake nag`):
-    runs code quality analysis tools on your code and complains.
--   `bin/rake test` (or `bundle exec rake test`): runs automated tests.
--   `bin/rake` will run both `nag` and `test`
+The parse_event method iterates over each line of the input .ics file and
+checks for these cases:
+
+```ruby
+
+    if line.include?("RRULE:") && line.include?("UNTIL=")
+
+      line = parse_event(line, "=")
+
+    elsif line.include?("DTSTART:")
+
+      line = parse_event(line, ":")
+
+    elsif line.include?("DTEND:")
+
+      line = parse_event(line, ":")
+
+    elsif line.include?("DTSTART;VALUE=")
+
+      line = parse_event(line, ":")
+
+    elsif line.include?("DTEND;VALUE=")
+
+      line = parse_event(line, ":")
+
+    elsif line.include?("DTSTART;TZID=")
+
+      line = parse_event(line, ":")
+
+    elsif line.include?("DTEND;TZID=")
+
+      line = parse_event(line, ":")
+
+    end
+```
+
+To check to confirm that the changes have taken place between your old and new
+calendar files, you can run this command in terminal:
+
+```ruby
+
+diff <input_file> <output_file> |less
+
+```
+
+You will see the differences between the two calendar files. It should have the
+same number of lines, the only thing that should have changed is the date of the
+events. The format of the date is yyyymmdd. You should see the difference
+between the dates be the INTERVAL_DAYS value. Another way to confirm that the
+file size is the same run in terminal:
+
+```ruby
+
+ls -l
+
+```
+
+Locate your old and new .ics files and you should see the size of the files be
+identical.
+
 
 ## [License](LICENSE)
 
