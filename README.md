@@ -23,9 +23,10 @@ like to copy and create a file for the new .ics calendar file.
 
 To run the script, execute this command in terminal:
 
-```ruby
-ruby lib/script.rb <input_file> <output_file> <interval_weeks>
+```sh
+bin/rake "move_calendar[<input_file>, <output_file>, <weeks_to_move>]"
 ```
+The quotes around the rake task are necessary. Quotes are not necessary around file names.
 
 This script takes the old .ics calendar file, new .ics calendar file and the
 number of weeks you'd like the event dates to be adjusted.
