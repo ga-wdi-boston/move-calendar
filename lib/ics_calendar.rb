@@ -41,33 +41,39 @@ class IcsCalendar
         # puts 'in event', line if counter > 0 && counter < 5 && self.in_event == true
         self.in_event = true if line.include? 'BEGIN:VEVENT'
 
-        if in_event == true
+        if self.in_event == true
           event_line_array.push(line)
         end
 
         if line.include? 'END:VEVENT'
           self.in_event = false
-          p event_line_array if counter == 0
+          p "event_line_array", event_line_array if counter == 0
           counter += 1
-          event = IcsEvent.new(event_line_array)
-          # puts event.start_date
+
           ics_events.push(IcsEvent.new(event_line_array))
 
           self.event_line_array = []
         end
 
 
-        colon_delimited_lines = ['DTSTART:', 'DTSTART:', 'DTEND:', 'DTSTART;VALUE=',
-                                 'DTEND;VALUE=', 'DTSTART;TZID=', 'DTEND;TZID=']
-        if line.include?('RRULE:') && line.include?('UNTIL=')
-          line = parse_event(line, '=')
-        # if the line contains any of the strings in colon_delimited_lines,
-        # parse it using a colon as the delimiter
-        elsif colon_delimited_lines.any? { |string| line.include?(string) }
-          line = parse_event(line, ':')
-        end
+        # colon_delimited_lines = ['DTSTART:', 'DTSTART:', 'DTEND:', 'DTSTART;VALUE=',
+        #                          'DTEND;VALUE=', 'DTSTART;TZID=', 'DTEND;TZID=']
+        # if line.include?('RRULE:') && line.include?('UNTIL=')
+        #   line = parse_event(line, '=')
+        # # if the line contains any of the strings in colon_delimited_lines,
+        # # parse it using a colon as the delimiter
+        # elsif colon_delimited_lines.any? { |string| line.include?(string) }
+        #   line = parse_event(line, ':')
+        # end
         # Takes line value, either copied or altered, and writes to output file
-        write_to.write(line)
+        if (in_event == false) && (!line.include? 'END:VEVENT')
+          write_to.write(line)
+        elsif line.include? 'END:VEVENT'
+            p "ICS_EVENT", ics_events.last.to_ics if (counter > 1) && (counter < 3)
+            ics_events.last.to_ics.each do |event_line|
+              write_to.write(event_line)
+            end
+        end
         # Ends loop once it loops through whole input file
       end
       # Closes output file which new calendar was written to
