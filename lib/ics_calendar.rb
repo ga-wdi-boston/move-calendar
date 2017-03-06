@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 require 'date'
 # Reads and moves an ics calendar
-class MoveCalendar
+class IcsCalendar
   attr_accessor :days_to_move, :ics_events
   attr_reader :input_file, :output_file
 
@@ -13,15 +13,17 @@ class MoveCalendar
   end
 
   def parse_event(line, delimiter)
-    d = line.split(/[\:\=](\d{8})/)
-    d[1] = Date.parse(d[1])
-    return line if d[1].year < 2016
+    line_array = line.split(/[\:\=](\d{8})/)
+    date = Date.parse(line_array[1])
+    return line if date.year < 2016
 
-    d[1] = (d[1] + days_to_move).to_s.delete('-')
+    date = (date + days_to_move).to_s.delete('-')
 
-    return d[0] + delimiter.to_s + d[1] + d[2] if d[2]
+    if line_array[2]
+      return line_array[0] + delimiter.to_s + date + line_array[2]
+    end
 
-    d[0] + delimiter.to_s + d[1]
+    line_array[0] + delimiter.to_s + date
   end
 
   def read_calendar
