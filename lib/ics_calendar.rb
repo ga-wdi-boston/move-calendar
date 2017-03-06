@@ -8,77 +8,76 @@ class IcsCalendar
   attr_reader :input_file, :output_file
   # private :in_event, :event_line_array
 
-  def initialize(input_file, output_file, days_to_move)
+  def initialize(input_file)
     @input_file = input_file
     @output_file = output_file
-    @days_to_move = days_to_move
+    @non_event_lines = []
     @ics_events = []
     @in_event = false
     @event_line_array = []
+    @holidays = []
+    read_calendar(input_file)
   end
 
-  def parse_event(line, delimiter)
-    line_array = line.split(/[\:\=](\d{8})/)
-    date = Date.parse(line_array[1])
-    return line if date.year < 2016
-
-    date = (date + days_to_move).to_s.delete('-')
-
-    if line_array[2]
-      return line_array[0] + delimiter.to_s + date + line_array[2]
-    end
-
-    line_array[0] + delimiter.to_s + date
-  end
-
-  def read_calendar
-    # open file in write-only mode
-    write_to = File.open(output_file, 'w')
+  def read_calendar(input_file)
     File.open(input_file) do |file|
       # Loops through each line of file and labels it line
-      counter = 0
       file.each do |line|
-        # puts 'in event', line if counter > 0 && counter < 5 && self.in_event == true
         self.in_event = true if line.include? 'BEGIN:VEVENT'
 
         if self.in_event == true
-          event_line_array.push(line)
+          # if we're in an event, push the line to an array to store it
+          @event_line_array.push(line)
+        else
+          # if not, push to the non-event array
+          @non_event_lines.push(line)
         end
 
+        # if the event is ending
         if line.include? 'END:VEVENT'
           self.in_event = false
-          p "event_line_array", event_line_array if counter == 0
-          counter += 1
 
-          ics_events.push(IcsEvent.new(event_line_array))
-
+          # create the ics_event
+          @ics_events.push(IcsEvent.new(event_line_array))
+          # reset the event_line_array
           self.event_line_array = []
         end
-
-
-        # colon_delimited_lines = ['DTSTART:', 'DTSTART:', 'DTEND:', 'DTSTART;VALUE=',
-        #                          'DTEND;VALUE=', 'DTSTART;TZID=', 'DTEND;TZID=']
-        # if line.include?('RRULE:') && line.include?('UNTIL=')
-        #   line = parse_event(line, '=')
-        # # if the line contains any of the strings in colon_delimited_lines,
-        # # parse it using a colon as the delimiter
-        # elsif colon_delimited_lines.any? { |string| line.include?(string) }
-        #   line = parse_event(line, ':')
-        # end
-        # Takes line value, either copied or altered, and writes to output file
-        if (in_event == false) && (!line.include? 'END:VEVENT')
-          write_to.write(line)
-        elsif line.include? 'END:VEVENT'
-            p "ICS_EVENT", ics_events.last.to_ics if (counter > 1) && (counter < 3)
-            ics_events.last.to_ics.each do |event_line|
-              write_to.write(event_line)
-            end
-        end
-        # Ends loop once it loops through whole input file
       end
-      # Closes output file which new calendar was written to
-      write_to.close
-      # Closes input file to secure old data
     end
+  end
+
+  def move(days_to_move)
+    sorted_events = ics_events.sort_by(&:start_date)
+    # puts sorted_events.first
+    self.ics_events = sorted_events.each do |event|
+      event.move(days_to_move)
+      if event.start_date.sunday?
+        event.move(1)
+      elsif event.start_date.saturday?
+        event.move(2)
+      end
+    end
+
+    $stdout.write ics_events.first.start_date
+    self
+  end
+
+  def write_calendar(output_file)
+    end_calendar = @non_event_lines.pop()
+
+    # open file in write-only mode
+    write_file = File.open(output_file, 'w')
+    @non_event_lines.each do |line|
+      write_file.write line
+    end
+
+    @ics_events.each do |event|
+      event.to_ics.each do |line|
+        write_file.write line
+      end
+    end
+
+    write_file.write(end_calendar)
+    write_file.close
   end
 end
