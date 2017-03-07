@@ -28,8 +28,8 @@ bin/rake "move_calendar[<input_file>, <output_file>, <weeks_to_move>]"
 ```
 The quotes around the rake task are necessary. Quotes are not necessary around file names.
 
-This script takes the old .ics calendar file, new .ics calendar file and the
-number of weeks you'd like the event dates to be adjusted.
+This script takes the old .ics calendar file, and writes a new .ics calendar
+file and the number of weeks you'd like the event dates to be adjusted.
 
 ## [License](LICENSE)
 
