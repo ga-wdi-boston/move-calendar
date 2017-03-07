@@ -42,5 +42,6 @@ class IcsEvent
   def move(days)
     self.start_date += days
     self.end_date += days
+    self
   end
 end

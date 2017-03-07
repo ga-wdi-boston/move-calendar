@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 require 'date'
+require 'holidays'
 
 require_relative './ics_event.rb'
 # Reads and moves an ics calendar
@@ -46,19 +47,46 @@ class IcsCalendar
     end
   end
 
+  def get_candidate_dates(start_date, end_date)
+    dates = [start_date]
+
+    # get the US holidays for three months after when the
+    # last event will be moved to
+    holidays = Holidays.between(start_date, end_date, :us)
+
+    dates << dates.last + 1 while dates.last < end_date - 1
+
+    dates.delete_if do |date|
+      (date.sunday? || date.saturday? ||
+        holidays.any? { |holiday| holiday[:date] == date })
+    end
+  end
+
   def move(days_to_move)
     sorted_events = ics_events.sort_by(&:start_date)
-    # puts sorted_events.first
-    self.ics_events = sorted_events.each do |event|
-      event.move(days_to_move)
-      if event.start_date.sunday?
-        event.move(1)
-      elsif event.start_date.saturday?
-        event.move(2)
+
+    first_moved_date = sorted_events.first.start_date + days_to_move
+    # adds two weeks to the last date as a buffer
+    last_moved_date = sorted_events.last.start_date + days_to_move + 14
+
+    candidate_dates = get_candidate_dates(first_moved_date, last_moved_date)
+
+    old_events = ics_events.map(&:itself)
+
+    candidate_dates.each do |candidate_date|
+      next unless old_events.positive?
+      old_date = old_events.first.start_date
+      events_to_move = old_events
+                       .select { |old_event| old_event.start_date == old_date }
+
+      old_events.reject! { |old_event| old_event.start_date == old_date }
+
+      events_to_move.each do |moving_event|
+        days_to_move = (candidate_date - moving_event.start_date).to_i
+        moving_event.move(days_to_move)
       end
     end
 
-    $stdout.write ics_events.first.start_date
     self
   end
 
