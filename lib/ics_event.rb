@@ -18,11 +18,13 @@ class IcsEvent
     line_array = line.split(':')
     line_array[1].chomp
   end
+  private :parse_description
 
   def parse_date(line)
     line_array = line.split(/[\:\=](\d{8})/)
     Date.parse(line_array[1])
   end
+  private :parse_date
 
   def write_date_line(line, date)
     line_array = line.split(/[\:\=](\d{8})/)

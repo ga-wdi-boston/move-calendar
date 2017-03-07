@@ -7,7 +7,7 @@ require_relative './ics_event.rb'
 class IcsCalendar
   attr_accessor :days_to_move, :ics_events, :in_event, :event_line_array
   attr_reader :input_file, :output_file
-  # private :in_event, :event_line_array
+  private :in_event, :event_line_array, :days_to_move
 
   def initialize(input_file)
     @input_file = input_file
@@ -29,6 +29,7 @@ class IcsCalendar
       @non_event_lines.push(line)
     end
   end
+  private :push_line
 
   def read_calendar(input_file)
     File.open(input_file) do |file|
@@ -49,6 +50,7 @@ class IcsCalendar
       end
     end
   end
+  private :read_calendar
 
   def get_candidate_dates(start_date, end_date)
     dates = [start_date]
@@ -64,6 +66,7 @@ class IcsCalendar
         holidays.any? { |holiday| holiday[:date] == date })
     end
   end
+  private :get_candidate_dates
 
   def move(days_to_move)
     sorted_events = ics_events.sort_by(&:start_date)
@@ -97,6 +100,7 @@ class IcsCalendar
       event.start_date == date
     end
   end
+  private :select_events
 
   def move_event_array(event_array, date)
     event_array.each do |moving_event|
@@ -104,6 +108,7 @@ class IcsCalendar
       moving_event.move days_to_move
     end
   end
+  private :move_event_array
 
   def write_calendar(output_file)
     # remove and save the last line of the calendar
