@@ -9,3 +9,5 @@ gem 'pry-byebug', '~> 3.3'
 gem 'rake', '~> 11.3'
 gem 'rspec', '~> 3.5'
 gem 'rubocop', '~> 0.46'
+
+gem 'holidays'
