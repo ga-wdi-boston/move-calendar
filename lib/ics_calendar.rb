@@ -20,29 +20,32 @@ class IcsCalendar
     read_calendar(input_file)
   end
 
+  def push_line(line)
+    if in_event == true
+      # if we're in an event, push the line to an array to store it
+      @event_line_array.push(line)
+    else
+      # if not, push to the non-event array
+      @non_event_lines.push(line)
+    end
+  end
+
   def read_calendar(input_file)
     File.open(input_file) do |file|
       # Loops through each line of file and labels it line
       file.each do |line|
         self.in_event = true if line.include? 'BEGIN:VEVENT'
 
-        if self.in_event == true
-          # if we're in an event, push the line to an array to store it
-          @event_line_array.push(line)
-        else
-          # if not, push to the non-event array
-          @non_event_lines.push(line)
-        end
+        push_line(line)
 
         # if the event is ending
-        if line.include? 'END:VEVENT'
-          self.in_event = false
+        next unless line.include? 'END:VEVENT'
+        self.in_event = false
 
-          # create the ics_event
-          @ics_events.push(IcsEvent.new(event_line_array))
-          # reset the event_line_array
-          self.event_line_array = []
-        end
+        # create the ics_event
+        @ics_events.push(IcsEvent.new(event_line_array))
+        # reset the event_line_array
+        self.event_line_array = []
       end
     end
   end
@@ -71,27 +74,40 @@ class IcsCalendar
 
     candidate_dates = get_candidate_dates(first_moved_date, last_moved_date)
 
-    old_events = ics_events.map(&:itself)
-
     candidate_dates.each do |candidate_date|
-      next unless old_events.positive?
-      old_date = old_events.first.start_date
-      events_to_move = old_events
-                       .select { |old_event| old_event.start_date == old_date }
+      next unless sorted_events.length.positive?
 
-      old_events.reject! { |old_event| old_event.start_date == old_date }
+      old_date = sorted_events.first.start_date
 
-      events_to_move.each do |moving_event|
-        days_to_move = (candidate_date - moving_event.start_date).to_i
-        moving_event.move(days_to_move)
-      end
+      events_to_move = select_events(sorted_events, old_date)
+
+      # remove the events that we're going to move
+      sorted_events
+        .reject! { |sorted_event| sorted_event.start_date == old_date }
+
+      # move the events to the candidate date
+      move_event_array(events_to_move, candidate_date)
     end
 
     self
   end
 
+  def select_events(events, date)
+    events.select do |event|
+      event.start_date == date
+    end
+  end
+
+  def move_event_array(event_array, date)
+    event_array.each do |moving_event|
+      days_to_move = (date - moving_event.start_date).to_i
+      moving_event.move days_to_move
+    end
+  end
+
   def write_calendar(output_file)
-    end_calendar = @non_event_lines.pop()
+    # remove and save the last line of the calendar
+    end_calendar = @non_event_lines.pop
 
     # open file in write-only mode
     write_file = File.open(output_file, 'w')

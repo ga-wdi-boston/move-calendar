@@ -2,7 +2,7 @@
 
 # Class representing an ics event as an array of strings
 class IcsEvent
-  attr_reader :to_ics, :ics_event
+  attr_reader :ics_event
   attr_accessor :start_date, :end_date
 
   def initialize(lines_array)
