@@ -2,7 +2,7 @@
 
 # Class representing an ics event as an array of strings
 class IcsEvent
-  attr_reader :ics_event
+  attr_reader :ics_event, :summary
   attr_accessor :start_date, :end_date
 
   def initialize(lines_array)
@@ -10,7 +10,13 @@ class IcsEvent
     lines_array.each do |line|
       @start_date = parse_date(line) if line.include? 'DTSTART'
       @end_date = parse_date(line) if line.include? 'DTEND'
+      @summary = parse_description(line) if line.include? 'SUMMARY'
     end
+  end
+
+  def parse_description(line)
+    line_array = line.split(':')
+    line_array[1].chomp
   end
 
   def parse_date(line)
