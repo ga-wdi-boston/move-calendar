@@ -87,9 +87,10 @@ class IcsCalendar
   end
   private :get_candidate_dates
 
-  def move(days_to_move)
+  def move_to(start_date)
     sorted_events = ics_events.sort_by(&:start_date)
 
+    days_to_move = (start_date - sorted_events.first.start_date).to_i
     first_moved_date = sorted_events.first.start_date + days_to_move
     # adds two weeks to the last date as a buffer
     last_moved_date = sorted_events.last.start_date + days_to_move + 14
