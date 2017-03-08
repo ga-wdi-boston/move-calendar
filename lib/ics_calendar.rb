@@ -52,12 +52,31 @@ class IcsCalendar
   end
   private :read_calendar
 
+  def add_ga_holidays(holidays)
+    thanks_index = holidays.index { |holiday| holiday[:name] == 'Thanksgiving' }
+    xmas_index = holidays.index { |holiday| holiday[:name] == 'Christmas Day' }
+
+    if thanks_index
+      holidays.push(name: 'Day after Thanksgiving',
+                    date: holidays[thanks_index][:date] + 1)
+    end
+
+    if xmas_index
+      holidays.push(name: 'Day after Christmas',
+                    date: holidays[xmas_index][:date] + 1)
+    end
+
+    holidays
+  end
+  private :add_ga_holidays
+
   def get_candidate_dates(start_date, end_date)
     dates = [start_date]
 
     # get the US holidays for three months after when the
     # last event will be moved to
-    holidays = Holidays.between(start_date, end_date, :us)
+    base_holidays = Holidays.between(start_date, end_date, :us)
+    holidays = add_ga_holidays(base_holidays)
 
     dates << dates.last + 1 while dates.last < end_date - 1
 
